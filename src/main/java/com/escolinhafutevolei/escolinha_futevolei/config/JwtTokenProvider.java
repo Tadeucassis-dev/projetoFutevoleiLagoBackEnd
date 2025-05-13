@@ -8,7 +8,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.Base64;
 import java.util.Date;
 
 @Component
@@ -27,16 +26,19 @@ public class JwtTokenProvider {
         if (secretKey == null || secretKey.trim().isEmpty()) {
             throw new IllegalArgumentException("A propriedade 'jwt.secret' não pode ser nula ou vazia. Configure-a em application.properties.");
         }
-        // secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
     }
 
     public String generateToken(Authentication authentication) {
-        String username = authentication.getName();
+        String email = authentication.getName();
+        return generateTokenByEmail(email);
+    }
+
+    public String generateTokenByEmail(String email) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + validityInMilliseconds);
 
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, secretKey)
@@ -52,7 +54,7 @@ public class JwtTokenProvider {
         }
     }
 
-    public String getUsernameFromToken(String token) {
+    public String getEmailFromToken(String token) {
         Claims claims = Jwts.parser()
                 .setSigningKey(secretKey)
                 .parseClaimsJws(token)

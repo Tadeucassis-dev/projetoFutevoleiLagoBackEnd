@@ -1,6 +1,5 @@
 package com.escolinhafutevolei.escolinha_futevolei.service;
 
-
 import com.escolinhafutevolei.escolinha_futevolei.model.Role;
 import com.escolinhafutevolei.escolinha_futevolei.model.User;
 import com.escolinhafutevolei.escolinha_futevolei.repository.RoleRepository;
@@ -12,8 +11,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.Optional;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -27,29 +28,49 @@ public class UserService implements UserDetailsService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public User registerUser(String username, String password) {
+    @PostConstruct
+    public void initRoles() {
+        if (roleRepository.findByName("ROLE_USER").isEmpty()) {
+            Role userRole = new Role();
+            userRole.setName("ROLE_USER");
+            roleRepository.save(userRole);
+        }
+        if (roleRepository.findByName("ROLE_ADMIN").isEmpty()) {
+            Role adminRole = new Role();
+            adminRole.setName("ROLE_ADMIN");
+            roleRepository.save(adminRole);
+        }
+    }
+
+    public User registerUser(String name, String email, String password) {
+        System.out.println("Registrando usuário: " + email);
         User user = new User();
-        user.setUsername(username);
+        user.setName(name);
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
-        Set<Role> roles = new HashSet<>();
-        roleRepository.findByName("ROLE_USER").ifPresent(roles::add);
-        user.setRoles(roles);
-        return userRepository.save(user);
+        Role userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Role USER não encontrada"));
+        user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
+        User savedUser = userRepository.save(user);
+        System.out.println("Usuário salvo: " + savedUser.getEmail());
+        return savedUser;
+    }
+
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com email: " + email));
         return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
+                .withUsername(user.getEmail())
                 .password(user.getPassword())
-                .roles(user.getRoles().stream().map(Role::getName).map(r -> r.replace("ROLE_", "")).toArray(String[]::new))
+                .roles(user.getRoles().stream()
+                        .map(Role::getName)
+                        .map(name -> name.replace("ROLE_", ""))
+                        .toArray(String[]::new))
                 .build();
-    }
-
-    public User findByUsername(Object username) {
-        return userRepository.findByUsername((String) username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
     }
 }

@@ -3,8 +3,6 @@ package com.escolinhafutevolei.escolinha_futevolei.controller;
 import com.escolinhafutevolei.escolinha_futevolei.config.JwtTokenProvider;
 import com.escolinhafutevolei.escolinha_futevolei.model.User;
 import com.escolinhafutevolei.escolinha_futevolei.service.UserService;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,8 +12,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Getter
-@Setter
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "http://localhost:5174", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS})
 public class AuthController {
@@ -29,25 +25,20 @@ public class AuthController {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
-    @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody RegisterRequest request) {
-        User user = userService.registerUser(request.getUsername(), request.getPassword());
-        return ResponseEntity.ok(user);
-    }
-
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        System.out.println("Recebido: username=" + request.getUsername() + ", password=" + request.getPassword());
+        System.out.println("Recebido: email=" + request.getEmail() + ", password=***");
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
             String token = jwtTokenProvider.generateToken(authentication);
-            User user = userService.findByUsername(request.getUsername());
-            System.out.println("Login bem-sucedido para: " + user.getUsername());
+            User user = userService.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+            System.out.println("Login bem-sucedido para: " + user.getEmail());
             return ResponseEntity.ok(new AuthResponse(token, user));
         } catch (BadCredentialsException e) {
-            System.out.println("Credenciais inválidas para usuário: " + request.getUsername());
+            System.out.println("Credenciais inválidas para email: " + request.getEmail());
             return ResponseEntity.status(401).body(new ErrorResponse("Credenciais inválidas"));
         } catch (Exception e) {
             System.out.println("Erro no login: " + e.getMessage());
@@ -55,29 +46,16 @@ public class AuthController {
         }
     }
 
-    static class RegisterRequest {
-        private String username;
-        private String password;
-
-        public String getUsername() {
-            return username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-    }
-
     static class LoginRequest {
-        private String username;
+        private String email;
         private String password;
 
-        public String getUsername() {
-            return username;
+        public String getEmail() {
+            return email;
         }
 
-        public void setUsername(String username) {
-            this.username = username;
+        public void setEmail(String email) {
+            this.email = email;
         }
 
         public String getPassword() {
