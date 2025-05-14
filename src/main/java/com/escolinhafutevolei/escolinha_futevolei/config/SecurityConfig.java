@@ -18,9 +18,9 @@ public class SecurityConfig {
         http
                 .cors() // ⚠️ Ativa o CORS
                 .and()
-                .csrf().disable()
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests()
-                .requestMatchers("/api/user/register","/api/user/register-student").permitAll()
+                .requestMatchers("/api/user/register","/api/user/register-student","/h2-console/**").permitAll()
                 .requestMatchers("/api/auth/login").permitAll()
                 .anyRequest().authenticated();
 

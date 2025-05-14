@@ -4,6 +4,7 @@ import com.escolinhafutevolei.escolinha_futevolei.model.Role;
 import com.escolinhafutevolei.escolinha_futevolei.model.Student;
 import com.escolinhafutevolei.escolinha_futevolei.model.User;
 import com.escolinhafutevolei.escolinha_futevolei.repository.RoleRepository;
+import com.escolinhafutevolei.escolinha_futevolei.repository.StudentRepository;
 import com.escolinhafutevolei.escolinha_futevolei.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -29,6 +29,9 @@ public class UserService implements UserDetailsService {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private StudentRepository studentRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -63,29 +66,36 @@ public class UserService implements UserDetailsService {
 
     public void registerStudent(String name, String age, String schoolUnit,
                                 MultipartFile identityFile, MultipartFile attendanceFile) {
-        System.out.println("Registrando aluno: " + name + ", idade: " + age + ", unidade escolar: " + schoolUnit);
-        Student student = new Student();
-        student.setName(name);
-        student.setAge(Integer.parseInt(age));
-        student.setSchoolUnit(schoolUnit);
-        // Salvar os arquivos de identidade e presença
-        System.out.println("Salvando arquivos: " + identityFile.getOriginalFilename() + ", " + attendanceFile.getOriginalFilename());
         try {
-            Files.createDirectories(Paths.get("uploads/identity"));
-            Files.createDirectories(Paths.get("uploads/attendance"));
-        } catch (IOException e) {
-            throw new RuntimeException("Erro ao criar diretórios: " + e.getMessage());
-        }
+            // Validar parâmetros
+            if (name == null || age == null || schoolUnit == null ||
+                    identityFile == null || attendanceFile == null) {
+                throw new IllegalArgumentException("Todos os campos são obrigatórios");
+            }
 
-        try {
-            Files.write(Paths.get("uploads/identity/" + identityFile.getOriginalFilename()),
-                       identityFile.getBytes());
-            Files.write(Paths.get("uploads/attendance/" + attendanceFile.getOriginalFilename()),
-                       attendanceFile.getBytes());
-        } catch (IOException e) {
-            throw new RuntimeException("Erro ao salvar arquivos: " + e.getMessage());
-        }
+            // Salvar arquivos
+            String identityFilePath = "uploads/identity/" + identityFile.getOriginalFilename();
+            String attendanceFilePath = "uploads/attendance/" + attendanceFile.getOriginalFilename();
+            Files.createDirectories(Paths.get("Uploads/identity"));
+            Files.createDirectories(Paths.get("Uploads/attendance"));
+            Files.write(Paths.get(identityFilePath), identityFile.getBytes());
+            Files.write(Paths.get(attendanceFilePath), attendanceFile.getBytes());
 
+            // Criar e salvar a entidade Student
+            Student student = new Student();
+            student.setName(name);
+            student.setAge(Integer.parseInt(age));
+            student.setSchoolUnit(schoolUnit);
+            student.setIdentityFilePath(identityFilePath);
+            student.setAttendanceFilePath(attendanceFilePath);
+            student.setApproved(false);
+            student.setUser(null); // Cadastro público, sem usuário vinculado
+
+            studentRepository.save(student);
+            System.out.println("Aluno salvo: " + name);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao salvar aluno: " + e.getMessage());
+        }
     }
 
     public Optional<User> findByEmail(String email) {
