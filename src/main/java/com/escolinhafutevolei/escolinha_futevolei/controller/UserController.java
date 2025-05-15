@@ -45,14 +45,22 @@ public class UserController {
     public ResponseEntity<?> registerStudent(
             @RequestParam("name") String name,
             @RequestParam("age") String age,
+            @RequestParam("fone") String fone,
+            @RequestParam("email") String email,
             @RequestParam("schoolUnit") String schoolUnit,
             @RequestParam("identityFile") MultipartFile identityFile,
             @RequestParam("attendanceFile") MultipartFile attendanceFile) {
-        System.out.println("Recebido: name=" + name + ", age=" + age + ", schoolUnit=" + schoolUnit +
-                ", identityFile=" + (identityFile != null ? identityFile.getOriginalFilename() : "null") +
-                ", attendanceFile=" + (attendanceFile != null ? attendanceFile.getOriginalFilename() : "null"));
+        System.out.println(
+                "Recebido: name=" + name +
+                        ", age=" + age +
+                        ", schoolUnit=" + schoolUnit +
+                        ", fone=" + fone +
+                        ", email=" + email +
+                        ", identityFile=" + (identityFile != null ? identityFile.getOriginalFilename() : "null") +
+                        ", attendanceFile=" + (attendanceFile != null ? attendanceFile.getOriginalFilename() : "null"));
+
         try {
-            userService.registerStudent(name, age, schoolUnit, identityFile, attendanceFile);
+            userService.registerStudent(name, age, schoolUnit, fone, email, identityFile, attendanceFile);
             return ResponseEntity.ok("Cadastro de aluno enviado para aprovação");
         } catch (Exception e) {
             System.out.println("Erro ao registrar aluno: " + e.getMessage());

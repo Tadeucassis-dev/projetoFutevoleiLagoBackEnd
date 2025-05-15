@@ -12,6 +12,8 @@ public class Student {
     private Long id;
     private String name;
     private int age;
+    private String fone;
+    private String email;
     private String schoolUnit;
     private String identityFilePath;
     private String attendanceFilePath;

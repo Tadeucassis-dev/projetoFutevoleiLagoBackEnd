@@ -64,11 +64,11 @@ public class UserService implements UserDetailsService {
         return savedUser;
     }
 
-    public void registerStudent(String name, String age, String schoolUnit,
+    public void registerStudent(String name, String age, String schoolUnit, String fone, String email,
                                 MultipartFile identityFile, MultipartFile attendanceFile) {
         try {
             // Validar parâmetros
-            if (name == null || age == null || schoolUnit == null ||
+            if (name == null || age == null || schoolUnit == null || fone == null || email == null ||
                     identityFile == null || attendanceFile == null) {
                 throw new IllegalArgumentException("Todos os campos são obrigatórios");
             }
@@ -86,6 +86,8 @@ public class UserService implements UserDetailsService {
             student.setName(name);
             student.setAge(Integer.parseInt(age));
             student.setSchoolUnit(schoolUnit);
+            student.setFone(fone);
+            student.setEmail(email);
             student.setIdentityFilePath(identityFilePath);
             student.setAttendanceFilePath(attendanceFilePath);
             student.setApproved(false);
@@ -115,4 +117,5 @@ public class UserService implements UserDetailsService {
                         .toArray(String[]::new))
                 .build();
     }
+
 }
